@@ -48,7 +48,7 @@
 <div id="map"></div>
 
 <script>
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs';
+const GOOGLE_MAPS_API_KEY = 'ここにAPIキー';
 
 let map;
 let currentLocation = null;
@@ -116,7 +116,7 @@ async function openDifyWithLocation() {
   const res = await fetch('https://api.dify.ai/v1/chat-messages', {
     method: 'POST',
     headers: {
-      'Authorization': 'Bearer app-ZGSUyT6udGjO53jWcUNRYOzL',
+      'Authorization': 'Bearer ここにDIFYAPIキー',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
