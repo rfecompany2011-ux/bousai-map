@@ -1,126 +1,116 @@
-<script>
-/********************************************************
- * 設定（ここだけ重要）
- ********************************************************/
-const DIFY_API_URL = 'https://digitalerapioneer.com/wp-json/bousai/v1/chat';
-const GOOGLE_MAPS_API_KEY = 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>千曲市 防災マップ AI</title>
 
-/********************************************************
- * 状態管理
- ********************************************************/
-let map;
-let userMarker = null;
-let shelterMarkers = [];
-let conversationId = '';
-let currentLocation = null;
-
-const shelters = [
-  { name: '千曲市役所', lat: 36.5344, lng: 138.1199 },
-  { name: '更埴体育館', lat: 36.5450, lng: 138.1150 },
-  { name: '千曲市総合体育館', lat: 36.5380, lng: 138.1250 },
-  { name: '上山田小学校', lat: 36.5120, lng: 138.1180 },
-  { name: '戸倉上山田中学校', lat: 36.5180, lng: 138.1210 }
-];
-
-/********************************************************
- * UI
- ********************************************************/
-function setStatus(text) {
-  document.getElementById('statusText').textContent = text;
+<style>
+body {
+  margin: 0;
+  font-family: sans-serif;
+  display: flex;
+  height: 100vh;
 }
+
+#map {
+  width: 70%;
+  height: 100%;
+}
+
+#chat {
+  width: 30%;
+  background: #0f172a;
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+#messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.msg-user {
+  background: #ef4444;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px;
+  text-align: right;
+}
+
+.msg-bot {
+  background: #2563eb;
+  padding: 10px;
+  border-radius: 10px;
+  margin: 5px;
+}
+
+#inputArea {
+  display: flex;
+}
+
+#input {
+  flex: 1;
+  padding: 10px;
+}
+
+button {
+  padding: 10px;
+  background: red;
+  color: white;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div id="chat">
+  <div id="messages"></div>
+  <div id="inputArea">
+    <input id="input" placeholder="質問してください">
+    <button onclick="send()">送信</button>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://digitalerapioneer.com/wp-json/bousai/v1/chat';
 
 function addMessage(type, text) {
-  const chatArea = document.getElementById('chatArea');
-  const el = document.createElement('div');
-  el.className = `message ${type}`;
-  el.innerHTML = text.replace(/\n/g, '<br>');
-  chatArea.appendChild(el);
-  chatArea.scrollTop = chatArea.scrollHeight;
-}
-
-function addTyping() {
-  const chatArea = document.getElementById('chatArea');
   const div = document.createElement('div');
-  div.className = 'typing';
-  div.innerHTML = '<span></span><span></span><span></span>';
-  chatArea.appendChild(div);
-  return div;
+  div.className = type === 'user' ? 'msg-user' : 'msg-bot';
+  div.innerText = text;
+  document.getElementById('messages').appendChild(div);
 }
 
-/********************************************************
- * チャット（完全修正版）
- ********************************************************/
-async function sendToDify(text) {
-  const sendBtn = document.getElementById('sendBtn');
-  sendBtn.disabled = true;
-
-  const typingEl = addTyping();
-
-  try {
-    let query = text;
-
-    if (currentLocation) {
-      query += `
-
-現在地:
-緯度 ${currentLocation.lat}
-経度 ${currentLocation.lng}`;
-    }
-
-    const res = await fetch(DIFY_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
-    });
-
-    const data = await res.json();
-    typingEl.remove();
-
-    if (!res.ok) {
-      addMessage('bot', 'エラー: ' + res.status);
-      return;
-    }
-
-    addMessage('bot', data.answer || '応答なし');
-
-  } catch (e) {
-    typingEl.remove();
-    addMessage('bot', '通信エラー');
-  } finally {
-    sendBtn.disabled = false;
-  }
-}
-
-/********************************************************
- * 入力
- ********************************************************/
-function sendMessage() {
-  const input = document.getElementById('userInput');
-  const text = input.value.trim();
+async function send() {
+  const input = document.getElementById('input');
+  const text = input.value;
   if (!text) return;
 
   addMessage('user', text);
   input.value = '';
-  sendToDify(text);
-}
 
-/********************************************************
- * 位置情報
- ********************************************************/
-function getLocation() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    currentLocation = {
-      lat: pos.coords.latitude,
-      lng: pos.coords.longitude
-    };
-    setStatus('現在地取得OK');
-  });
-}
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: text })
+    });
 
-/********************************************************
- * 起動
- ********************************************************/
-window.onload = function() {
-  setStatus('準備完了');
-};
+    const data = await res.json();
+
+    addMessage('bot', data.answer || data.message || JSON.stringify(data));
+
+  } catch (e) {
+    addMessage('bot', '通信エラー');
+  }
+}
 </script>
+
+</body>
+</html>
