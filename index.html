@@ -1,78 +1,33 @@
 async function sendToDify(text) {
   const sendBtn = document.getElementById('sendBtn');
   sendBtn.disabled = true;
-  setStatus('AIに問い合わせ中...');
-
-  const typingEl = addTyping();
 
   try {
-    let query = text;
-
-    if (currentLocation) {
-      query += `
-
-現在地情報:
-- 緯度: ${currentLocation.lat}
-- 経度: ${currentLocation.lng}
-- 地域: 千曲市周辺を想定
-
-地図上の避難所候補:
-${shelters.map((s, i) => `${i + 1}. ${s.name}（緯度 ${s.lat}, 経度 ${s.lng}）`).join('\n')}
-
-上記を踏まえて、ユーザーにわかりやすく日本語で案内してください。`;
-    } else {
-      query += `
-
-地域は千曲市周辺を想定して回答してください。`;
-    }
-
-    const response = await fetch('https://digitalerapioneer.com/wp-json/bousai/v1/chat', {
+    const response = await fetch('https://api.dify.ai/v1/chat-messages', {
       method: 'POST',
       headers: {
+        'Authorization': 'Bearer app-wh8aP2PpjUQNt5gzWQ2pWIE5,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        query: query
+        inputs: {},
+        query: text,
+        response_mode: 'blocking',
+        user: 'web-user'
       })
     });
 
     const data = await response.json();
-    typingEl.remove();
 
     if (!response.ok) {
-      addMessage(
-        'bot',
-        typeof data.error === 'string'
-          ? data.error
-          : JSON.stringify(data.error ?? data, null, 2)
-      );
-      setStatus(`エラー: ${response.status}`);
+      addMessage('bot', JSON.stringify(data));
       return;
     }
 
-    if (data.answer) {
-      addMessage('bot', data.answer);
-      setStatus('回答を取得しました');
-    } else if (data.message) {
-      addMessage('bot', data.message);
-      setStatus('回答を取得しました');
-    } else if (data.error) {
-      addMessage(
-        'bot',
-        typeof data.error === 'string'
-          ? data.error
-          : JSON.stringify(data.error, null, 2)
-      );
-      setStatus('エラーが返されました');
-    } else {
-      addMessage('bot', JSON.stringify(data, null, 2));
-      setStatus('応答を取得しました');
-    }
+    addMessage('bot', data.answer || '応答なし');
 
-  } catch (error) {
-    if (typingEl) typingEl.remove();
-    addMessage('bot', '通信エラー: ' + error.message);
-    setStatus('通信エラー');
+  } catch (e) {
+    addMessage('bot', '通信エラー');
   } finally {
     sendBtn.disabled = false;
   }
