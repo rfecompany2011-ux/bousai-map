@@ -4,331 +4,127 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <title>千曲市 防災マップ</title>
+
   <style>
     * { box-sizing: border-box; }
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-      background: #0f172a;
-      color: #fff;
-    }
-
-    .app {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
+    html, body { margin:0; padding:0; height:100%; font-family:sans-serif; }
 
     .header {
-      background: #e11d24;
-      color: #fff;
-      padding: 18px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
+      background:#e11d24;
+      color:#fff;
+      padding:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
     }
 
-    .header-left h1 {
-      margin: 0;
-      font-size: 22px;
-      line-height: 1.2;
-    }
-
-    .header-left p {
-      margin: 6px 0 0;
-      font-size: 14px;
-      opacity: 0.95;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .top-btn {
-      border: 1px solid rgba(255,255,255,0.3);
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-      border-radius: 999px;
-      padding: 12px 20px;
-      cursor: pointer;
-      font-size: 15px;
-      white-space: nowrap;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .main {
-      flex: 1;
-      display: flex;
-      min-height: 0;
-    }
-
-    .map-wrap {
-      width: 100%;
-      position: relative;
-      background: #dbeafe;
+    .btn {
+      background:#fff;
+      color:#e11d24;
+      border:none;
+      padding:10px 14px;
+      border-radius:20px;
+      cursor:pointer;
+      margin-left:8px;
     }
 
     #map {
-      width: 100%;
-      height: 100%;
-    }
-
-    .panel {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      width: 340px;
-      max-width: calc(100% - 32px);
-      background: rgba(11, 18, 32, 0.92);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 18px;
-      padding: 16px;
-      backdrop-filter: blur(8px);
-      z-index: 10;
-    }
-
-    .panel h2 {
-      margin: 0 0 10px;
-      font-size: 18px;
-    }
-
-    .status {
-      font-size: 14px;
-      color: #cbd5e1;
-      margin-bottom: 12px;
-      line-height: 1.6;
-    }
-
-    .panel-buttons {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .panel-buttons button,
-    .panel-buttons a {
-      border: none;
-      background: #2563eb;
-      color: #fff;
-      border-radius: 999px;
-      padding: 10px 14px;
-      cursor: pointer;
-      font-size: 14px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .legend {
-      position: absolute;
-      right: 16px;
-      bottom: 16px;
-      background: rgba(11, 18, 32, 0.92);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-size: 13px;
-      line-height: 1.7;
-      z-index: 10;
-    }
-
-    .legend .dot {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-
-    .dot-blue { background: #2563eb; }
-    .dot-red { background: #ef4444; }
-
-    @media (max-width: 768px) {
-      .panel {
-        width: calc(100% - 24px);
-        left: 12px;
-        top: 12px;
-      }
-
-      .legend {
-        right: 12px;
-        bottom: 12px;
-      }
+      width:100%;
+      height:calc(100% - 80px);
     }
   </style>
 </head>
+
 <body>
-  <div class="app">
-    <div class="header">
-      <div class="header-left">
-        <h1>千曲市 防災マップ</h1>
-        <p>現在地と避難候補を確認できるシンプル版</p>
-      </div>
-      <div class="header-actions">
-        <button class="top-btn" id="locationBtn">📍 現在地を取得</button>
-        <a class="top-btn" href="DIFYの公開URLをここに貼る" target="_blank" rel="noopener">💬 AI相談を開く</a>
-      </div>
-    </div>
 
-    <div class="main">
-      <div class="map-wrap">
-        <div id="map"></div>
+<div class="header">
+  <div>千曲市 防災マップ</div>
 
-        <div class="panel">
-          <h2>使い方</h2>
-          <div class="status" id="statusText">
-            地図を読み込み中です。
-          </div>
-          <div class="panel-buttons">
-            <button onclick="focusShelter('千曲市役所')">千曲市役所</button>
-            <button onclick="focusShelter('更埴体育館')">更埴体育館</button>
-            <button onclick="focusShelter('戸倉体育館')">戸倉体育館</button>
-            <a href="DIFYの公開URLをここに貼る" target="_blank" rel="noopener">AI相談を開く</a>
-          </div>
-        </div>
-
-        <div class="legend">
-          <div><span class="dot dot-blue"></span>避難候補</div>
-          <div><span class="dot dot-red"></span>現在地</div>
-        </div>
-      </div>
-    </div>
+  <div>
+    <button class="btn" onclick="getCurrentLocation()">現在地</button>
+    <button class="btn" onclick="openDifyWithLocation()">AI相談</button>
   </div>
+</div>
 
-  <script>
-    const GOOGLE_MAPS_API_KEY = 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs';
-    const DIFY_PUBLIC_URL = 'https://udify.app/chat/Pqfe5TQ1LiPY3OPv';
+<div id="map"></div>
 
-    let map;
-    let currentLocation = null;
-    let userMarker = null;
-    let shelterMarkers = [];
+<script>
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs';
+const DIFY_PUBLIC_URL = 'https://udify.app/chat/Pqfe5TQ1LiPY3OPv';
 
-    const shelters = [
-      { name: '千曲市役所', lat: 36.5308, lng: 138.1197 },
-      { name: '戸倉体育館', lat: 36.4895, lng: 138.1712 },
-      { name: '更埴体育館', lat: 36.5208, lng: 138.1304 },
-      { name: '上山田文化会館', lat: 36.4768, lng: 138.1676 },
-      { name: '稲荷山公民館', lat: 36.5518, lng: 138.1219 }
-    ];
+let map;
+let currentLocation = null;
+let userMarker = null;
 
-    function setStatus(text) {
-      document.getElementById('statusText').textContent = text;
-    }
+const shelters = [
+  { name:'千曲市役所', lat:36.5308, lng:138.1197 },
+  { name:'戸倉体育館', lat:36.4895, lng:138.1712 },
+  { name:'更埴体育館', lat:36.5208, lng:138.1304 }
+];
 
-    function initMap() {
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 36.5308, lng: 138.1197 },
-        zoom: 12,
-        mapTypeControl: true,
-        streetViewControl: false,
-        fullscreenControl: true
-      });
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center:{ lat:36.53, lng:138.12 },
+    zoom:12
+  });
 
-      shelters.forEach(shelter => {
-        const marker = new google.maps.Marker({
-          position: { lat: shelter.lat, lng: shelter.lng },
-          map: map,
-          title: shelter.name,
-          icon: {
-            url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-          }
-        });
+  shelters.forEach(s => {
+    new google.maps.Marker({
+      position:s,
+      map:map,
+      title:s.name,
+      icon:'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+    });
+  });
+}
 
-        const infoWindow = new google.maps.InfoWindow({
-          content: `<div style="color:#111;padding:4px 6px;"><strong>${shelter.name}</strong></div>`
-        });
+function loadMap() {
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+  script.async = true;
+  document.head.appendChild(script);
+}
 
-        marker.addListener('click', () => {
-          infoWindow.open(map, marker);
-        });
+function getCurrentLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
 
-        shelterMarkers.push({ name: shelter.name, marker });
-      });
+    currentLocation = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    };
 
-      document.querySelectorAll('a[href="DIFYの公開URLをここに貼る"]').forEach(el => {
-        el.href = DIFY_PUBLIC_URL;
-      });
+    if (userMarker) userMarker.setMap(null);
 
-      setStatus('地図を表示しました。現在地を取得できます。');
-    }
+    userMarker = new google.maps.Marker({
+      position: currentLocation,
+      map: map,
+      icon:'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+    });
 
-    function loadGoogleMaps() {
-      if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'ここにGoogle Maps APIキー') {
-        setStatus('Google Maps APIキーを設定してください。');
-        return;
-      }
+    map.setCenter(currentLocation);
+    map.setZoom(14);
 
-      window.initMap = initMap;
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
+  }, () => {
+    alert('位置情報取得失敗');
+  });
+}
 
-    function getCurrentLocation() {
-      if (!navigator.geolocation) {
-        setStatus('このブラウザは位置情報に対応していません。');
-        return;
-      }
+function openDifyWithLocation() {
+  if (!currentLocation) {
+    alert('先に現在地を取得してください');
+    return;
+  }
 
-      setStatus('現在地を取得中です...');
+  const lat = currentLocation.lat;
+  const lng = currentLocation.lng;
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          currentLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
+  const url = `${DIFY_PUBLIC_URL}?lat=${lat}&lng=${lng}`;
 
-          if (userMarker) {
-            userMarker.setMap(null);
-          }
+  window.open(url, '_blank');
+}
 
-          userMarker = new google.maps.Marker({
-            position: currentLocation,
-            map: map,
-            title: '現在地',
-            icon: {
-              url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-            }
-          });
+loadMap();
+</script>
 
-          map.setCenter(currentLocation);
-          map.setZoom(14);
-
-          setStatus(`現在地を取得しました（${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}）`);
-        },
-        () => {
-          setStatus('現在地を取得できませんでした。');
-        }
-      );
-    }
-
-    function focusShelter(name) {
-      const found = shelterMarkers.find(item => item.name === name);
-      if (!found) return;
-
-      map.setCenter(found.marker.getPosition());
-      map.setZoom(15);
-      setStatus(`${name} を表示しています。`);
-    }
-
-    document.getElementById('locationBtn').addEventListener('click', getCurrentLocation);
-
-    loadGoogleMaps();
-  </script>
 </body>
 </html>
