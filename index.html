@@ -1,26 +1,22 @@
-async function sendToDify(text) {
-  const sendBtn = document.getElementById('sendBtn');
-  sendBtn.disabled = true;
+const data = await response.json();
+typingEl.remove();
 
-  try {
-    const res = await fetch('https://digitalerapioneer.com/wp-json/bousai/v1/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: text })
-    });
+if (!response.ok) {
+  addMessage('bot', typeof data.error === 'string' ? data.error : JSON.stringify(data.error, null, 2));
+  setStatus(`エラー: ${response.status}`);
+  return;
+}
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      addMessage('bot', JSON.stringify(data, null, 2)); // エラー内容を表示
-      return;
-    }
-
-    addMessage('bot', data.answer || '回答が空です');
-
-  } catch (e) {
-    addMessage('bot', '通信エラー: ' + e.message);
-  } finally {
-    sendBtn.disabled = false;
-  }
+if (data.answer) {
+  addMessage('bot', data.answer);
+  setStatus('回答を取得しました');
+} else if (data.message) {
+  addMessage('bot', data.message);
+  setStatus('回答を取得しました');
+} else if (data.error) {
+  addMessage('bot', typeof data.error === 'string' ? data.error : JSON.stringify(data.error, null, 2));
+  setStatus('エラーが返されました');
+} else {
+  addMessage('bot', JSON.stringify(data));
+  setStatus('応答を取得しました');
 }
