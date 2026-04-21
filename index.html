@@ -1,13 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>千曲市 防災マップ</title>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; height:100%; font-family:sans-serif; }
+
+    .header {
+      background:#e11d24;
+      color:#fff;
+      padding:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    .btn {
+      background:#fff;
+      color:#e11d24;
+      border:none;
+      padding:10px 14px;
+      border-radius:20px;
+      cursor:pointer;
+      margin-left:8px;
+    }
+
+    #map {
+      width:100%;
+      height:calc(100% - 80px);
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="header">
+  <div>千曲市 防災マップ</div>
+  <div>
+    <button class="btn" onclick="getCurrentLocation()">現在地</button>
+    <button class="btn" onclick="openDifyWithLocation()">AI相談</button>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs';
+
+let map;
+let currentLocation = null;
+let userMarker = null;
+
+const shelters = [
+  { name:'千曲市役所', lat:36.5308, lng:138.1197 },
+  { name:'戸倉体育館', lat:36.4895, lng:138.1712 },
+  { name:'更埴体育館', lat:36.5208, lng:138.1304 }
+];
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center:{ lat:36.53, lng:138.12 },
+    zoom:12
+  });
+
+  shelters.forEach(s => {
+    new google.maps.Marker({
+      position:s,
+      map:map,
+      title:s.name,
+      icon:'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+    });
+  });
+}
+
+function loadMap() {
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+function getCurrentLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+
+    currentLocation = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    };
+
+    if (userMarker) userMarker.setMap(null);
+
+    userMarker = new google.maps.Marker({
+      position: currentLocation,
+      map: map,
+      icon:'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+    });
+
+    map.setCenter(currentLocation);
+    map.setZoom(14);
+
+  }, () => {
+    alert('位置情報取得失敗');
+  });
+}
+
 async function openDifyWithLocation() {
   if (!currentLocation) {
     alert('先に現在地を取得してください');
     return;
   }
 
-  const res = await fetch('ここにDifyのAPIエンドポイント', {
+  const res = await fetch('https://api.dify.ai/v1/chat-messages', {
     method: 'POST',
     headers: {
-      'Authorization': 'app-ZGSUyT6udGjO53jWcUNRYOzL',
+      'Authorization': 'Bearer app-ZGSUyT6udGjO53jWcUNRYOzL',
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -15,6 +124,7 @@ async function openDifyWithLocation() {
         lat: currentLocation.lat,
         lng: currentLocation.lng
       },
+      query: `現在地（緯度${currentLocation.lat}、経度${currentLocation.lng}）から最適な避難所を教えてください`,
       response_mode: 'blocking',
       user: 'web-user'
     })
@@ -22,5 +132,16 @@ async function openDifyWithLocation() {
 
   const data = await res.json();
 
+  if (!res.ok) {
+    alert(JSON.stringify(data));
+    return;
+  }
+
   alert(data.answer || '回答なし');
 }
+
+loadMap();
+</script>
+
+</body>
+</html>
