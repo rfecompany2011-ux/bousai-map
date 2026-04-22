@@ -19,8 +19,6 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
     }
     .title {
       font-size: 20px;
@@ -29,189 +27,119 @@
     .actions {
       display: flex;
       gap: 8px;
-      flex-wrap: wrap;
     }
     button {
       border: none;
       border-radius: 20px;
       padding: 10px 14px;
       cursor: pointer;
-      font-size: 14px;
     }
     .btn-white {
       background: #fff;
       color: #d62828;
     }
     .status {
-      padding: 10px 16px;
+      padding: 10px;
       background: #f1f5f9;
-      font-size: 14px;
-      border-bottom: 1px solid #ddd;
     }
     #map {
       width: 100%;
-      height: calc(100% - 104px);
+      height: calc(100% - 100px);
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="title">千曲市 防災マップ</div>
-    <div class="actions">
-      <button class="btn-white" onclick="getCurrentLocation()">現在地を取得</button>
-      <button class="btn-white" onclick="showNearestShelter()">最寄り避難所</button>
-    </div>
+
+<div class="header">
+  <div class="title">千曲市 防災マップ</div>
+  <div class="actions">
+    <button class="btn-white" onclick="getCurrentLocation()">現在地</button>
+    <button class="btn-white" onclick="showNearestShelter()">避難所</button>
   </div>
+</div>
 
-  <div class="status" id="statusText">地図を読み込み中です。</div>
-  <div id="map"></div>
+<div class="status" id="statusText">読み込み中...</div>
+<div id="map"></div>
 
-  <script>
-    const GOOGLE_MAPS_API_KEY = 'ここにGoogle Maps APIキー';
+<script>
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs';
 
-    let map;
-    let currentLocation = null;
-    let userMarker = null;
-    let shelterMarkers = [];
+let map;
+let currentLocation = null;
 
-    const shelters = [
-      { name: '千曲市役所', lat: 36.5308, lng: 138.1197 },
-      { name: '戸倉体育館', lat: 36.4895, lng: 138.1712 },
-      { name: '更埴体育館', lat: 36.5208, lng: 138.1304 },
-      { name: '上山田文化会館', lat: 36.4768, lng: 138.1676 },
-      { name: '稲荷山公民館', lat: 36.5518, lng: 138.1219 }
-    ];
+const shelters = [
+  { name: '千曲市役所', lat: 36.5308, lng: 138.1197 },
+  { name: '戸倉体育館', lat: 36.4895, lng: 138.1712 }
+];
 
-    function setStatus(text) {
-      document.getElementById('statusText').textContent = text;
+function setStatus(text) {
+  document.getElementById('statusText').textContent = text;
+}
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 36.53, lng: 138.11 },
+    zoom: 12
+  });
+
+  shelters.forEach(s => {
+    new google.maps.Marker({
+      position: s,
+      map,
+      title: s.name
+    });
+  });
+
+  setStatus('地図OK');
+}
+
+function loadMap() {
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+  script.async = true;
+  document.head.appendChild(script);
+}
+
+function getCurrentLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    currentLocation = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    };
+    new google.maps.Marker({
+      position: currentLocation,
+      map,
+      title: '現在地'
+    });
+    map.setCenter(currentLocation);
+  });
+}
+
+function showNearestShelter() {
+  if (!currentLocation) {
+    alert('現在地を先に取得');
+    return;
+  }
+
+  let nearest = shelters[0];
+  let min = 999;
+
+  shelters.forEach(s => {
+    const d = Math.hypot(
+      currentLocation.lat - s.lat,
+      currentLocation.lng - s.lng
+    );
+    if (d < min) {
+      min = d;
+      nearest = s;
     }
+  });
 
-    function initMap() {
-      map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 36.5308, lng: 138.1197 },
-        zoom: 12,
-        mapTypeControl: true,
-        streetViewControl: false,
-        fullscreenControl: true
-      });
+  alert(nearest.name);
+}
 
-      shelterMarkers = shelters.map((shelter) => {
-        const marker = new google.maps.Marker({
-          position: { lat: shelter.lat, lng: shelter.lng },
-          map: map,
-          title: shelter.name,
-          icon: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-        });
+loadMap();
+</script>
 
-        const infoWindow = new google.maps.InfoWindow({
-          content: `<div style="color:#111;"><strong>${shelter.name}</strong></div>`
-        });
-
-        marker.addListener('click', () => {
-          infoWindow.open(map, marker);
-        });
-
-        return { shelter, marker };
-      });
-
-      setStatus('地図を表示しました。現在地を取得できます。');
-    }
-
-    function loadGoogleMaps() {
-      if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'AIzaSyAu7g3KAbA62UyHvnAyHh7G7X0rKkpthxs') {
-        setStatus('Google Maps APIキーを設定してください。');
-        return;
-      }
-
-      window.initMap = initMap;
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
-
-    function getCurrentLocation() {
-      if (!navigator.geolocation) {
-        setStatus('このブラウザは位置情報に対応していません。');
-        return;
-      }
-
-      setStatus('現在地を取得中です。');
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          currentLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-
-          if (userMarker) {
-            userMarker.setMap(null);
-          }
-
-          userMarker = new google.maps.Marker({
-            position: currentLocation,
-            map: map,
-            title: '現在地',
-            icon: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
-          });
-
-          map.setCenter(currentLocation);
-          map.setZoom(14);
-
-          setStatus(`現在地を取得しました（緯度 ${currentLocation.lat.toFixed(5)} / 経度 ${currentLocation.lng.toFixed(5)}）`);
-        },
-        () => {
-          setStatus('現在地を取得できませんでした。');
-        }
-      );
-    }
-
-    function getDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLng / 2) * Math.sin(dLng / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
-    }
-
-    function showNearestShelter() {
-      if (!currentLocation) {
-        alert('先に現在地を取得してください。');
-        return;
-      }
-
-      let nearest = null;
-      let minDist = Infinity;
-
-      shelters.forEach((shelter) => {
-        const dist = getDistance(
-          currentLocation.lat,
-          currentLocation.lng,
-          shelter.lat,
-          shelter.lng
-        );
-
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = shelter;
-        }
-      });
-
-      if (nearest) {
-        map.setCenter({ lat: nearest.lat, lng: nearest.lng });
-        map.setZoom(15);
-        alert(`最寄り避難所: ${nearest.name}\n距離: 約${minDist.toFixed(2)}km`);
-        setStatus(`最寄り避難所は ${nearest.name} です。`);
-      }
-    }
-
-    loadGoogleMaps();
-  </script>
 </body>
 </html>
